@@ -197,7 +197,8 @@
 <!-- Loading overlay -->
 <div id="overlay">
     <div class="spinner"></div>
-    <p>Generuję PDF, proszę czekać…</p>
+    <p id="overlay-msg">Generuję PDF, proszę czekać…</p>
+    <p id="overlay-progress" style="font-size:0.85rem;color:#6080a0;min-height:1.2em"></p>
 </div>
 
 <script>
@@ -251,12 +252,21 @@ document.getElementById('form-oferta').addEventListener('submit', async (e) => {
         const {task_id, error: err0} = await r1.json();
         if (err0) throw new Error(err0);
 
-        // Polling co 2s
+        // Polling co 1.5s
+        const progEl = document.getElementById('overlay-progress');
+        const msgEl  = document.getElementById('overlay-msg');
         let wynik = null;
         while (true) {
-            await new Promise(r => setTimeout(r, 2000));
+            await new Promise(r => setTimeout(r, 1500));
             const r2 = await fetch(`/api/status/${task_id}`);
             const data = await r2.json();
+            // Aktualizuj postęp
+            const p = data.progress;
+            if (p && p.total > 0) {
+                const skrot = p.nazwa.length > 48 ? p.nazwa.slice(0, 48) + '…' : p.nazwa;
+                progEl.textContent = `${p.current} / ${p.total}  ·  ${skrot}`;
+                msgEl.textContent = 'Tłumaczę i generuję produkty…';
+            }
             if (data.status === 'done')   { wynik = {ok: true,  task_id}; break; }
             if (data.status === 'error')  { wynik = {ok: false, msg: data.error}; break; }
         }

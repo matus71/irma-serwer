@@ -146,7 +146,11 @@ def api_generuj():
     }
 
     task_id = str(uuid.uuid4())
-    tasks[task_id] = {"status": "running", "pdf_path": None, "error": None}
+    tasks[task_id] = {"status": "running", "pdf_path": None, "error": None,
+                      "progress": {"current": 0, "total": 0, "nazwa": ""}}
+
+    def on_progress(current, total, nazwa):
+        tasks[task_id]["progress"] = {"current": current, "total": total, "nazwa": nazwa}
 
     def worker():
         prev_dir = os.getcwd()
@@ -162,6 +166,7 @@ def api_generuj():
                 open_after=False,
                 rozszerz_ramki=rozszerz_ramki,
                 meta=meta,
+                progress_callback=on_progress,
             )
             tasks[task_id]["pdf_path"] = str(Path(pdf_path).resolve())
             tasks[task_id]["status"] = "done"
