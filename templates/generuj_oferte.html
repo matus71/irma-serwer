@@ -228,6 +228,16 @@ function onSzablonChange() {
     }
 }
 
+// Inicjalizacja przy ładowaniu — wypełnij tło i ustaw domyślne PRO Technik poziomo
+onSzablonChange();
+(function() {
+    const tloSel = document.getElementById('tlo');
+    const domyslneTlo = 'PRO Technik (poziomo)';
+    for (const opt of tloSel.options) {
+        if (opt.value === domyslneTlo) { tloSel.value = domyslneTlo; break; }
+    }
+})();
+
 document.getElementById('form-oferta').addEventListener('submit', async (e) => {
     e.preventDefault();
 
