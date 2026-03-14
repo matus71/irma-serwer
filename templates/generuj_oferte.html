@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block title %}Generuj ofertę — Panel IRMA{% endblock %}
+
+{% block content %}
+<style>
+    h2 { font-size: 1.5rem; color: #e94560; margin-bottom: 28px; }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+        font-size: 0.85rem;
+        color: #a0a0c0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    input, select {
+        background: #0f3460;
+        border: 1px solid #1a4a7a;
+        border-radius: 6px;
+        color: #e0e0e0;
+        padding: 10px 14px;
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus { border-color: #e94560; }
+
+    .radio-group {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        padding: 10px 0;
+    }
+
+    .radio-group label {
+        text-transform: none;
+        letter-spacing: 0;
+        font-size: 0.95rem;
+        color: #e0e0e0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+    }
+
+    .btn-generate {
+        background: #e94560;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 14px 40px;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.2s;
+        margin-top: 10px;
+    }
+
+    .btn-generate:hover { background: #c73652; }
+    .btn-generate:disabled { background: #555; cursor: not-allowed; }
+
+    /* Loading overlay */
+    #overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 10, 30, 0.85);
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    #overlay.active { display: flex; }
+
+    .spinner {
+        width: 52px; height: 52px;
+        border: 5px solid #1a4a7a;
+        border-top-color: #e94560;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #overlay p { color: #e0e0e0; font-size: 1.1rem; }
+
+    /* Wynik */
+    #wynik {
+        display: none;
+        margin-top: 24px;
+        padding: 20px 24px;
+        border-radius: 8px;
+        font-size: 0.95rem;
+    }
+
+    #wynik.ok {
+        background: #0d3320;
+        border: 1px solid #1a6b2e;
+        color: #4cdf80;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    #wynik.err {
+        background: #3a0d15;
+        border: 1px solid #7a1a2e;
+        color: #ff6b6b;
+        display: block;
+    }
+
+    #wynik a {
+        color: #4cdf80;
+        font-weight: bold;
+        text-decoration: underline;
+    }
+</style>
+
+<h2>Generuj ofertę PDF</h2>
+
+<form id="form-oferta">
+    <div class="form-grid">
+        <div class="form-group full">
+            <label>Numer oferty</label>
+            <input type="text" id="numer" value="PRO 1/TM/2025" placeholder="np. PRO 1/TM/2025" required>
+        </div>
+
+        <div class="form-group full">
+            <label>Szablon PDF</label>
+            <select id="szablon" onchange="onSzablonChange()">
+                {% for nazwa, plik in szablony.items() %}
+                <option value="{{ nazwa }}" data-plik="{{ plik }}">{{ nazwa }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Tło PDF</label>
+            <select id="tlo" disabled>
+                <option value="">— brak —</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Język oferty</label>
+            <select id="jezyk">
+                {% for j in jezyki %}
+                <option value="{{ j }}" {% if j == 'polski' %}selected{% endif %}>{{ j }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group full">
+            <label>Sortowanie pozycji</label>
+            <div class="radio-group">
+                <label><input type="radio" name="sortuj" value="dokument" checked> Wg dokumentu</label>
+                <label><input type="radio" name="sortuj" value="alfa"> Alfabetycznie (wg nazwy)</label>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn-generate" id="btn-gen">Generuj PDF</button>
+</form>
+
+<div id="wynik"></div>
+
+<!-- Loading overlay -->
+<div id="overlay">
+    <div class="spinner"></div>
+    <p>Generuję PDF, proszę czekać…</p>
+</div>
+
+<script>
+const tla_pion  = {{ tla_pion | tojson }};
+const tla_poziom = {{ tla_poziom | tojson }};
+
+function onSzablonChange() {
+    const sel = document.getElementById('szablon');
+    const plik = sel.selectedOptions[0].dataset.plik;
+    const tloSel = document.getElementById('tlo');
+
+    let opcje = {};
+    if (plik.startsWith('szablon9')) opcje = tla_pion;
+    else if (plik.startsWith('szablon8')) opcje = tla_poziom;
+
+    tloSel.innerHTML = '<option value="">— brak —</option>';
+    const klucze = Object.keys(opcje);
+    if (klucze.length) {
+        klucze.forEach(k => {
+            const o = document.createElement('option');
+            o.value = k; o.textContent = k;
+            tloSel.appendChild(o);
+        });
+        tloSel.disabled = false;
+    } else {
+        tloSel.disabled = true;
+    }
+}
+
+document.getElementById('form-oferta').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const numer   = document.getElementById('numer').value.trim();
+    const szablon = document.getElementById('szablon').value;
+    const jezyk   = document.getElementById('jezyk').value;
+    const tlo     = document.getElementById('tlo').value;
+    const sortuj  = document.querySelector('input[name="sortuj"]:checked').value;
+
+    document.getElementById('wynik').style.display = 'none';
+    document.getElementById('btn-gen').disabled = true;
+    document.getElementById('overlay').classList.add('active');
+
+    try {
+        // Uruchom zadanie
+        const r1 = await fetch('/api/generuj', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({numer, szablon, jezyk, tlo, sortuj})
+        });
+        const {task_id, error: err0} = await r1.json();
+        if (err0) throw new Error(err0);
+
+        // Polling co 2s
+        let wynik = null;
+        while (true) {
+            await new Promise(r => setTimeout(r, 2000));
+            const r2 = await fetch(`/api/status/${task_id}`);
+            const data = await r2.json();
+            if (data.status === 'done')   { wynik = {ok: true,  task_id}; break; }
+            if (data.status === 'error')  { wynik = {ok: false, msg: data.error}; break; }
+        }
+
+        if (wynik.ok) {
+            const div = document.getElementById('wynik');
+            div.className = 'ok';
+            div.innerHTML = `<span>✔ PDF wygenerowany</span>
+                <a href="/api/pobierz/${wynik.task_id}" target="_blank">Otwórz PDF</a>`;
+            div.style.display = 'flex';
+        } else {
+            throw new Error(wynik.msg);
+        }
+    } catch (err) {
+        const div = document.getElementById('wynik');
+        div.className = 'err';
+        div.textContent = `Błąd: ${err.message}`;
+        div.style.display = 'block';
+    } finally {
+        document.getElementById('overlay').classList.remove('active');
+        document.getElementById('btn-gen').disabled = false;
+    }
+});
+</script>
+{% endblock %}

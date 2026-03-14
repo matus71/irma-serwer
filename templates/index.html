@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Start — Panel IRMA{% endblock %}
+
+{% block content %}
+<style>
+    .hero {
+        text-align: center;
+        padding: 48px 0 40px;
+    }
+    .hero h2 {
+        font-size: 2rem;
+        color: #e94560;
+        margin-bottom: 10px;
+    }
+    .hero p {
+        color: #a0a0b0;
+        font-size: 1.05rem;
+    }
+
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        margin-top: 40px;
+    }
+
+    .card {
+        background: #16213e;
+        border: 1px solid #0f3460;
+        border-radius: 10px;
+        padding: 32px 28px;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+        display: block;
+    }
+
+    .card:hover {
+        transform: translateY(-4px);
+        border-color: #e94560;
+        box-shadow: 0 8px 24px rgba(233, 69, 96, 0.15);
+    }
+
+    .card .icon {
+        font-size: 2.4rem;
+        margin-bottom: 16px;
+    }
+
+    .card h3 {
+        font-size: 1.2rem;
+        color: #ffffff;
+        margin-bottom: 8px;
+    }
+
+    .card p {
+        color: #7070a0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+</style>
+
+<div class="hero">
+    <h2>Witaj w Panelu IRMA</h2>
+    <p>Wybierz moduł z menu lub kliknij kafelek poniżej</p>
+</div>
+
+<div class="cards">
+    <a href="/generuj-oferte" class="card">
+        <div class="icon">📄</div>
+        <h3>Generuj ofertę</h3>
+        <p>Twórz oferty PDF na podstawie dokumentów z systemu IRMA. Wybierz szablon, język i wygeneruj plik PDF.</p>
+    </a>
+    <a href="/mailing" class="card">
+        <div class="icon">📧</div>
+        <h3>Mailing</h3>
+        <p>Przygotuj i wyślij kampanie mailingowe do klientów. Zarządzaj listami odbiorców i szablonami wiadomości.</p>
+    </a>
+    <a href="/opisy-produktow" class="card">
+        <div class="icon">🏷️</div>
+        <h3>Opisy produktów</h3>
+        <p>Generuj i edytuj opisy produktów przy użyciu AI. Tłumacz na wiele języków i optymalizuj treści.</p>
+    </a>
+</div>
+{% endblock %}

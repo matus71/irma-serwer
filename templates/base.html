@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Panel IRMA{% endblock %}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #16213e;
+            border-bottom: 2px solid #0f3460;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            color: #e94560;
+            letter-spacing: 1px;
+        }
+
+        header span {
+            color: #a0a0b0;
+            font-size: 0.9rem;
+        }
+
+        nav {
+            background: #16213e;
+            padding: 0 32px;
+            display: flex;
+            gap: 4px;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        nav a {
+            color: #a0a0c0;
+            text-decoration: none;
+            padding: 12px 20px;
+            font-size: 0.95rem;
+            border-bottom: 3px solid transparent;
+            transition: color 0.2s, border-color 0.2s;
+        }
+
+        nav a:hover, nav a.active {
+            color: #e94560;
+            border-bottom-color: #e94560;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 32px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 24px;
+            color: #505070;
+            font-size: 0.8rem;
+            border-top: 1px solid #0f3460;
+            margin-top: 60px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Panel IRMA</h1>
+        <span>System zarządzania ofertami</span>
+    </header>
+    <nav>
+        <a href="/" {% if request.path == '/' %}class="active"{% endif %}>Start</a>
+        <a href="/generuj-oferte" {% if request.path == '/generuj-oferte' %}class="active"{% endif %}>Generuj ofertę</a>
+        <a href="/mailing" {% if request.path == '/mailing' %}class="active"{% endif %}>Mailing</a>
+        <a href="/opisy-produktow" {% if request.path == '/opisy-produktow' %}class="active"{% endif %}>Opisy produktów</a>
+    </nav>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <footer>Panel IRMA &copy; 2026</footer>
+</body>
+</html>

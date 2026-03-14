@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tytul }} — Panel IRMA{% endblock %}
+
+{% block content %}
+<style>
+    .placeholder {
+        text-align: center;
+        padding: 80px 0;
+        color: #505070;
+    }
+    .placeholder .icon { font-size: 3rem; margin-bottom: 16px; }
+    .placeholder h2 { font-size: 1.6rem; color: #7070a0; margin-bottom: 8px; }
+    .placeholder p { font-size: 0.95rem; }
+</style>
+
+<div class="placeholder">
+    <div class="icon">🚧</div>
+    <h2>{{ tytul }}</h2>
+    <p>Moduł w przygotowaniu</p>
+</div>
+{% endblock %}
