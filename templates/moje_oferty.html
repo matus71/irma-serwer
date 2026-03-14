@@ -4,7 +4,27 @@
 {% block content %}
 <style>
     h2 { font-size: 1.5rem; color: #e94560; margin-bottom: 8px; }
-    .subtitle { color: #606080; font-size: 0.85rem; margin-bottom: 28px; }
+    .subtitle { color: #606080; font-size: 0.85rem; margin-bottom: 16px; }
+
+    .filtr-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    #filtr-input {
+        background: #0f3460;
+        border: 1px solid #1a4a7a;
+        border-radius: 6px;
+        color: #e0e0e0;
+        padding: 8px 14px;
+        font-size: 0.9rem;
+        outline: none;
+        width: 260px;
+        transition: border-color 0.2s;
+    }
+    #filtr-input:focus { border-color: #e94560; }
+    #filtr-count { color: #505070; font-size: 0.82rem; }
 
     .oferty-table {
         width: 100%;
@@ -24,22 +44,41 @@
     }
 
     .oferty-table td {
-        padding: 11px 14px;
+        padding: 10px 14px;
         border-bottom: 1px solid #0f3460;
-        vertical-align: middle;
+        vertical-align: top;
     }
 
     .oferty-table tr:hover td { background: #16213e; }
     .oferty-table tr.usuwana td { opacity: 0.3; transition: opacity 0.3s; }
+    .oferty-table tr.ukryta { display: none; }
 
-    .numer { font-weight: bold; color: #e0e0e0; }
+    /* Kolumna: data — wąska */
+    .col-data { white-space: nowrap; width: 90px; }
+    .ts-date { color: #a0a0c0; }
+    .ts-time { color: #404060; font-size: 0.8rem; }
 
+    /* Kolumna: numer — kompaktowa */
+    .col-numer { white-space: nowrap; width: 1%; }
+    .numer { font-weight: bold; color: #e0e0e0; font-size: 0.88rem; }
+
+    /* Kolumna: opis — szeroka, zawijana */
+    .col-opis { width: 35%; }
+    .opis-text {
+        color: #9090b0;
+        font-size: 0.82rem;
+        line-height: 1.45;
+        word-break: break-word;
+    }
+
+    /* Kolumna: szczegóły */
+    .col-szczegs { width: 30%; }
     .pill {
         display: inline-block;
         background: #0f3460;
         border-radius: 12px;
-        padding: 2px 10px;
-        font-size: 0.78rem;
+        padding: 2px 9px;
+        font-size: 0.75rem;
         color: #8080b0;
         margin: 1px 2px;
         white-space: nowrap;
@@ -48,138 +87,115 @@
     .pill.orange { background: #2a1f00; color: #e0a030; }
     .pill.red    { background: #3a0d15; color: #ff8888; }
 
-    .ts { color: #606080; font-size: 0.82rem; white-space: nowrap; }
-    .size { color: #505070; font-size: 0.8rem; }
-
+    /* Kolumna: akcje */
+    .col-akcje { white-space: nowrap; width: 1%; }
     .btn {
         border-radius: 6px;
-        padding: 5px 13px;
-        font-size: 0.82rem;
+        padding: 4px 11px;
+        font-size: 0.8rem;
         cursor: pointer;
         text-decoration: none;
         white-space: nowrap;
-        transition: background 0.2s, color 0.2s;
         border: 1px solid;
         background: transparent;
+        transition: background 0.2s, color 0.2s;
+        display: inline-block;
+        margin: 1px 1px;
     }
-    .btn-view  { color: #e94560; border-color: #e94560; }
+    .btn-view   { color: #e94560; border-color: #e94560; }
     .btn-view:hover { background: #e94560; color: white; }
-    .btn-rename { color: #6090e0; border-color: #2a4070; margin-left: 4px; }
+    .btn-rename { color: #6090e0; border-color: #2a4070; }
     .btn-rename:hover { background: #2a4070; color: #a0c0ff; }
-    .btn-del   { color: #707090; border-color: #303050; margin-left: 4px; }
+    .btn-del    { color: #707090; border-color: #303050; }
     .btn-del:hover { background: #3a0d15; color: #ff6060; border-color: #7a1a2e; }
-    .btn-mail  { color: #4cdf80; border-color: #1a6b2e; margin-left: 4px; opacity: 0.4; cursor: not-allowed; }
+    .btn-mail   { color: #4cdf80; border-color: #1a6b2e; opacity: 0.35; cursor: not-allowed; }
 
-    .actions { white-space: nowrap; }
-
-    .empty {
-        color: #505070;
-        text-align: center;
-        padding: 60px 0;
-    }
+    .empty { color: #505070; text-align: center; padding: 60px 0; }
 
     /* Modal zmień nazwę */
     #modal-backdrop {
-        display: none;
-        position: fixed; inset: 0;
-        background: rgba(10,10,30,0.8);
-        z-index: 200;
-        align-items: center;
-        justify-content: center;
+        display: none; position: fixed; inset: 0;
+        background: rgba(10,10,30,0.8); z-index: 200;
+        align-items: center; justify-content: center;
     }
     #modal-backdrop.active { display: flex; }
     #modal-box {
-        background: #16213e;
-        border: 1px solid #0f3460;
-        border-radius: 12px;
-        padding: 28px 32px;
-        min-width: 380px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
+        background: #16213e; border: 1px solid #0f3460;
+        border-radius: 12px; padding: 28px 32px;
+        min-width: 380px; display: flex; flex-direction: column; gap: 14px;
     }
     #modal-box h3 { color: #e94560; font-size: 1.1rem; }
     #modal-input {
-        background: #0f3460;
-        border: 1px solid #1a4a7a;
-        border-radius: 6px;
-        color: #e0e0e0;
-        padding: 10px 14px;
-        font-size: 0.95rem;
-        outline: none;
-        width: 100%;
+        background: #0f3460; border: 1px solid #1a4a7a; border-radius: 6px;
+        color: #e0e0e0; padding: 10px 14px; font-size: 0.95rem;
+        outline: none; width: 100%;
     }
     #modal-input:focus { border-color: #e94560; }
     .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
-    .btn-modal-ok  { background: #e94560; color: white; border: none; border-radius: 6px; padding: 8px 22px; cursor: pointer; font-size: 0.9rem; }
+    .btn-modal-ok { background: #e94560; color: white; border: none; border-radius: 6px; padding: 8px 22px; cursor: pointer; }
     .btn-modal-ok:hover { background: #c73652; }
-    .btn-modal-cancel { background: #0f3460; color: #a0a0c0; border: 1px solid #1a4a7a; border-radius: 6px; padding: 8px 22px; cursor: pointer; font-size: 0.9rem; }
+    .btn-modal-cancel { background: #0f3460; color: #a0a0c0; border: 1px solid #1a4a7a; border-radius: 6px; padding: 8px 22px; cursor: pointer; }
     #modal-error { color: #ff6b6b; font-size: 0.85rem; display: none; }
 
     /* Toast */
     #toast {
         position: fixed; bottom: 30px; right: 30px;
-        background: #0d3320; border: 1px solid #1a6b2e;
-        color: #4cdf80; padding: 12px 22px;
-        border-radius: 8px; font-size: 0.9rem;
-        display: none; z-index: 300;
+        padding: 12px 22px; border-radius: 8px; font-size: 0.9rem;
+        display: none; z-index: 300; border: 1px solid;
         animation: fadeIn 0.2s;
     }
-    @keyframes fadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
 </style>
 
 <h2>Moje oferty</h2>
 <p class="subtitle">Wygenerowane pliki PDF — od najnowszego</p>
 
 {% if oferty %}
+<div class="filtr-bar">
+    <input id="filtr-input" type="text" placeholder="Filtruj po numerze dokumentu…" oninput="filtruj(this.value)">
+    <span id="filtr-count"></span>
+</div>
+
 <table class="oferty-table" id="tabela">
     <thead>
         <tr>
-            <th>Data</th>
-            <th>Numer oferty</th>
-            <th>Opis (Uwagi)</th>
-            <th>Szczegóły</th>
-            <th>Rozmiar</th>
-            <th></th>
+            <th class="col-data">Data</th>
+            <th class="col-numer">Nr dokumentu</th>
+            <th class="col-opis">Opis (Uwagi)</th>
+            <th class="col-szczegs">Szczegóły</th>
+            <th class="col-akcje"></th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="tbody">
     {% for o in oferty %}
-    <tr data-host="{{ o._host }}" data-filename="{{ o._filename }}">
-        <td class="ts">
+    <tr data-host="{{ o._host }}" data-filename="{{ o._filename }}"
+        data-numer="{{ (o.numer or '')|lower }}">
+        <td class="col-data">
             {% if o.wygenerowano %}
-                {{ o.wygenerowano[:10] }}<br>
-                <span style="color:#404060">{{ o.wygenerowano[11:16] }}</span>
+            <span class="ts-date">{{ o.wygenerowano[:10] }}</span><br>
+            <span class="ts-time">{{ o.wygenerowano[11:16] }}</span>
             {% else %}—{% endif %}
-            <br><span style="color:#303050;font-size:0.75rem">{{ o._host }}</span>
         </td>
-        <td class="numer">{{ o.numer or o._filename }}</td>
-        <td style="color:#a0a0c0;font-size:0.85rem;max-width:220px">{{ o.opis or '' }}</td>
-        <td>
-            {% if o.szablon_nazwa %}
-            <span class="pill">{{ o.szablon_nazwa }}</span>
-            {% endif %}
-            {% if o.jezyk and o.jezyk != 'polski' %}
-            <span class="pill orange">{{ o.jezyk }}</span>
-            {% endif %}
-            {% if o.tlo_nazwa %}
-            <span class="pill">tło: {{ o.tlo_nazwa }}</span>
-            {% endif %}
-            {% if o.ilosc_produktow %}
-            <span class="pill green">{{ o.ilosc_produktow }} prod.</span>
-            {% endif %}
-            {% if o.rozszerz_ramki %}
-            <span class="pill red">+ramki</span>
-            {% endif %}
+        <td class="col-numer">
+            <span class="numer">{{ o.numer or o._filename }}</span>
         </td>
-        <td class="size">{{ o._size_kb }} KB</td>
-        <td class="actions">
+        <td class="col-opis">
+            <span class="opis-text">{{ o.opis or '' }}</span>
+        </td>
+        <td class="col-szczegs">
+            {% if o.szablon_nazwa %}<span class="pill">{{ o.szablon_nazwa }}</span>{% endif %}
+            {% if o.jezyk and o.jezyk != 'polski' %}<span class="pill orange">{{ o.jezyk }}</span>{% endif %}
+            {% if o.tlo_nazwa %}<span class="pill">tło: {{ o.tlo_nazwa }}</span>{% endif %}
+            {% if o.ilosc_produktow %}<span class="pill green">{{ o.ilosc_produktow }} prod.</span>{% endif %}
+            {% if o.rozszerz_ramki %}<span class="pill red">+ramki</span>{% endif %}
+        </td>
+        <td class="col-akcje">
             <a class="btn btn-view"
                href="/oferty/pdf/{{ o._host }}/{{ o._filename }}"
                target="_blank">Otwórz</a>
             <button class="btn btn-rename" onclick="otworzRename(this)">Zmień nazwę</button>
             <button class="btn btn-del" onclick="usunOferte(this)">Usuń</button>
-            <button class="btn btn-mail" title="Mailing — wkrótce" disabled>Wyślij</button>
+            <button class="btn btn-mail" disabled title="Mailing — wkrótce">Wyślij</button>
         </td>
     </tr>
     {% endfor %}
@@ -207,6 +223,29 @@
 <div id="toast"></div>
 
 <script>
+// ── Filtr ────────────────────────────────────────────────────
+function filtruj(q) {
+    q = q.trim().toLowerCase();
+    const rows = document.querySelectorAll('#tbody tr');
+    let vis = 0;
+    rows.forEach(tr => {
+        const match = !q || tr.dataset.numer.includes(q);
+        tr.classList.toggle('ukryta', !match);
+        if (match) vis++;
+    });
+    const total = rows.length;
+    document.getElementById('filtr-count').textContent =
+        q ? `${vis} z ${total}` : `${total} ofert`;
+}
+
+// Inicjalizacja licznika
+document.addEventListener('DOMContentLoaded', () => {
+    const rows = document.querySelectorAll('#tbody tr');
+    document.getElementById('filtr-count').textContent = `${rows.length} ofert`;
+    document.getElementById('filtr-input').focus();
+});
+
+// ── Helpers ──────────────────────────────────────────────────
 let _renameRow = null;
 
 function rowData(btn) {
@@ -218,12 +257,13 @@ function toast(msg, ok = true) {
     const el = document.getElementById('toast');
     el.textContent = msg;
     el.style.cssText = ok
-        ? 'display:block;background:#0d3320;border-color:#1a6b2e;color:#4cdf80'
-        : 'display:block;background:#3a0d15;border-color:#7a1a2e;color:#ff6b6b';
+        ? 'display:block;background:#0d3320;border-color:#1a6b2e;color:#4cdf80;position:fixed;bottom:30px;right:30px;padding:12px 22px;border-radius:8px;font-size:0.9rem;z-index:300;border:1px solid;animation:fadeIn 0.2s'
+        : 'display:block;background:#3a0d15;border-color:#7a1a2e;color:#ff6b6b;position:fixed;bottom:30px;right:30px;padding:12px 22px;border-radius:8px;font-size:0.9rem;z-index:300;border:1px solid;animation:fadeIn 0.2s';
     clearTimeout(el._t);
     el._t = setTimeout(() => el.style.display = 'none', 3000);
 }
 
+// ── Usuń ─────────────────────────────────────────────────────
 async function usunOferte(btn) {
     const { tr, host, filename } = rowData(btn);
     if (!confirm(`Usunąć plik:\n${filename}?`)) return;
@@ -235,6 +275,7 @@ async function usunOferte(btn) {
     });
     if (r.ok) {
         tr.remove();
+        filtruj(document.getElementById('filtr-input').value);
         toast('Plik usunięty.');
     } else {
         tr.classList.remove('usuwana');
@@ -243,6 +284,7 @@ async function usunOferte(btn) {
     }
 }
 
+// ── Zmień nazwę ──────────────────────────────────────────────
 function otworzRename(btn) {
     const { tr, filename } = rowData(btn);
     _renameRow = tr;
@@ -262,7 +304,7 @@ async function zapiszNazwe() {
     if (!_renameRow) return;
     const nowa_nazwa = document.getElementById('modal-input').value.trim();
     const errEl = document.getElementById('modal-error');
-    if (!nowa_nazwa) { errEl.textContent = 'Podaj nazwę.'; errEl.style.display='block'; return; }
+    if (!nowa_nazwa) { errEl.textContent = 'Podaj nazwę.'; errEl.style.display = 'block'; return; }
     const host = _renameRow.dataset.host;
     const filename = _renameRow.dataset.filename;
     const r = await fetch('/api/oferty/zmien-nazwe', {
@@ -272,10 +314,10 @@ async function zapiszNazwe() {
     });
     const d = await r.json();
     if (r.ok) {
-        // Aktualizuj wiersz
         _renameRow.dataset.filename = d.nowa_nazwa;
-        const a = _renameRow.querySelector('.btn-view');
-        a.href = `/oferty/pdf/${host}/${d.nowa_nazwa}`;
+        _renameRow.dataset.numer = d.nowa_nazwa.toLowerCase();
+        _renameRow.querySelector('.btn-view').href = `/oferty/pdf/${host}/${d.nowa_nazwa}`;
+        _renameRow.querySelector('.numer').textContent = d.nowa_nazwa.replace('.pdf','');
         zamknijModal();
         toast('Nazwa zmieniona.');
     } else {
@@ -284,11 +326,10 @@ async function zapiszNazwe() {
     }
 }
 
-// Zamknij modal klikając poza nim
-document.getElementById('modal-backdrop').addEventListener('click', function(e) {
-    if (e.target === this) zamknijModal();
+document.getElementById('modal-backdrop').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-backdrop')) zamknijModal();
 });
-document.getElementById('modal-input').addEventListener('keydown', function(e) {
+document.getElementById('modal-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') zapiszNazwe();
     if (e.key === 'Escape') zamknijModal();
 });
