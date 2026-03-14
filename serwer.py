@@ -224,22 +224,39 @@ def _meta_from_pdf(pdf_path: Path) -> dict:
 
 def _parse_filename(stem: str) -> dict:
     """Fallback — parsuje nazwę pliku gdy brak sidecara i metadanych PDF.
-    Format: {safe_num}_{jezyk}_{safe_tpl}_{YYYYMMDD}_{HHMM}
+    Nowy format:  {safe_num}_{YYYYMMDD}-{HHMM}   np. PRO 1_TM_2025_20260314-1818
+    Stary format: {safe_num}_{jezyk}_{safe_tpl}_{YYYYMMDD}_{HHMM}
     """
     from datetime import datetime as _dt
-    parts = stem.rsplit("_", 4)
-    ts, jezyk, szablon, numer = "", "", "", stem
-    if len(parts) == 5:
-        numer_raw, jezyk, szablon, date_part, time_part = parts
+    ts, numer = "", stem
+
+    # Nowy format: ostatni segment to YYYYMMDD-HHMM
+    parts = stem.rsplit("_", 1)
+    if len(parts) == 2 and "-" in parts[1]:
+        numer_raw, dt_part = parts
+        date_part, time_part = dt_part.split("-", 1)
+        try:
+            ts = _dt.strptime(date_part + time_part, "%Y%m%d%H%M").isoformat(timespec="seconds")
+            numer = numer_raw.replace("_", "/")
+            return {"numer": numer, "szablon_nazwa": "", "jezyk": "", "opis": "",
+                    "tlo_nazwa": "", "ilosc_produktow": None, "wygenerowano": ts}
+        except Exception:
+            pass
+
+    # Stary format: {safe_num}_{jezyk}_{safe_tpl}_{YYYYMMDD}_{HHMM}
+    parts5 = stem.rsplit("_", 4)
+    if len(parts5) == 5:
+        numer_raw, jezyk, szablon, date_part, time_part = parts5
         numer = numer_raw.replace("_", "/")
         try:
             ts = _dt.strptime(date_part + time_part, "%Y%m%d%H%M").isoformat(timespec="seconds")
         except Exception:
             pass
-    return {
-        "numer": numer, "szablon_nazwa": szablon, "jezyk": jezyk,
-        "tlo_nazwa": "", "ilosc_produktow": None, "wygenerowano": ts,
-    }
+        return {"numer": numer, "szablon_nazwa": szablon, "jezyk": jezyk, "opis": "",
+                "tlo_nazwa": "", "ilosc_produktow": None, "wygenerowano": ts}
+
+    return {"numer": numer, "szablon_nazwa": "", "jezyk": "", "opis": "",
+            "tlo_nazwa": "", "ilosc_produktow": None, "wygenerowano": ts}
 
 
 def _scan_oferty() -> list[dict]:
