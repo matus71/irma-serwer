@@ -133,6 +133,7 @@ def api_generuj():
 
     tlo_key = data.get("tlo", "").strip()
     plik_tla = tla_opcje_pion.get(tlo_key) or tla_opcje_poziom.get(tlo_key) or None
+    rozszerz_ramki = bool(data.get("rozszerz_ramki", False))
 
     task_id = str(uuid.uuid4())
     tasks[task_id] = {"status": "running", "pdf_path": None, "error": None}
@@ -149,6 +150,7 @@ def api_generuj():
                 tlo=plik_tla,
                 sortuj_po_nazwie=sortuj_po_nazwie,
                 open_after=False,
+                rozszerz_ramki=rozszerz_ramki,
             )
             # Absolutna ścieżka — przed przywróceniem katalogu!
             tasks[task_id]["pdf_path"] = str(Path(pdf_path).resolve())
@@ -191,4 +193,4 @@ def opisy_produktow():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=False)

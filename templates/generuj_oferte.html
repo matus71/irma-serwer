@@ -173,6 +173,20 @@
                 <label><input type="radio" name="sortuj" value="alfa"> Alfabetycznie (wg nazwy)</label>
             </div>
         </div>
+
+        <div class="form-group full">
+            <label>Rozszerzenie oferty</label>
+            <div class="radio-group">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" id="rozszerz_ramki" style="width:18px;height:18px;accent-color:#e94560;">
+                    Dodaj wszystkie towary z ramki katalogowej
+                </label>
+                <span style="color:#606080;font-size:0.82rem;margin-left:4px;">
+                    — uzupełnia ofertę o podobne produkty (kolory, rozmiary) z tej samej ramki;
+                    sortowanie: ramka → nazwa
+                </span>
+            </div>
+        </div>
     </div>
 
     <button type="submit" class="btn-generate" id="btn-gen">Generuj PDF</button>
@@ -220,7 +234,8 @@ document.getElementById('form-oferta').addEventListener('submit', async (e) => {
     const szablon = document.getElementById('szablon').value;
     const jezyk   = document.getElementById('jezyk').value;
     const tlo     = document.getElementById('tlo').value;
-    const sortuj  = document.querySelector('input[name="sortuj"]:checked').value;
+    const sortuj          = document.querySelector('input[name="sortuj"]:checked').value;
+    const rozszerz_ramki  = document.getElementById('rozszerz_ramki').checked;
 
     document.getElementById('wynik').style.display = 'none';
     document.getElementById('btn-gen').disabled = true;
@@ -231,7 +246,7 @@ document.getElementById('form-oferta').addEventListener('submit', async (e) => {
         const r1 = await fetch('/api/generuj', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({numer, szablon, jezyk, tlo, sortuj})
+            body: JSON.stringify({numer, szablon, jezyk, tlo, sortuj, rozszerz_ramki})
         });
         const {task_id, error: err0} = await r1.json();
         if (err0) throw new Error(err0);
