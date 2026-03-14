@@ -1,11 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Moje oferty — Panel IRMA{% endblock %}
 
+{% block extra_style %}:root { --main-max-width: 98%; }{% endblock %}
+
 {% block content %}
 <style>
-    /* Rozszerz kontener na całą szerokość dla tej strony */
-    main { max-width: 98% !important; }
-
     h2 { font-size: 1.5rem; color: #e94560; margin-bottom: 8px; }
     .subtitle { color: #606080; font-size: 0.85rem; margin-bottom: 16px; }
 

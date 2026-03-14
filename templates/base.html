@@ -57,7 +57,7 @@
         }
 
         main {
-            max-width: 1100px;
+            max-width: var(--main-max-width, 1100px);
             margin: 40px auto;
             padding: 0 32px;
         }
@@ -70,6 +70,7 @@
             border-top: 1px solid #0f3460;
             margin-top: 60px;
         }
+    {% block extra_style %}{% endblock %}
     </style>
 </head>
 <body>
