@@ -80,6 +80,7 @@
     <nav>
         <a href="/" {% if request.path == '/' %}class="active"{% endif %}>Start</a>
         <a href="/generuj-oferte" {% if request.path == '/generuj-oferte' %}class="active"{% endif %}>Generuj ofertę</a>
+        <a href="/moje-oferty" {% if request.path == '/moje-oferty' %}class="active"{% endif %}>Moje oferty</a>
         <a href="/mailing" {% if request.path == '/mailing' %}class="active"{% endif %}>Mailing</a>
         <a href="/opisy-produktow" {% if request.path == '/opisy-produktow' %}class="active"{% endif %}>Opisy produktów</a>
     </nav>

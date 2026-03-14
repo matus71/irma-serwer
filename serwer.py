@@ -1,10 +1,12 @@
 import os
 import sys
+import json
 import uuid
+import platform
 import threading
 import pyodbc
 from pathlib import Path
-from flask import Flask, render_template, g, request, jsonify, send_file
+from flask import Flask, render_template, g, request, jsonify, send_file, abort
 from dotenv import load_dotenv
 
 load_dotenv("A:/Antropic/db.env")
@@ -16,6 +18,7 @@ DB_CONN_STR = (
 
 # Ścieżka do modułu generuj_pdf
 OFERTA_DIR = Path("A:/Antropic/pyOfertaPDF1/pyOfertaPDF1")
+OFERTY_ROOT = Path("A:/Antropic/gotowe oferty")
 sys.path.insert(0, str(OFERTA_DIR))
 
 from generuj_pdf import generuj_oferte, _load_openai_key
@@ -109,7 +112,6 @@ def index():
 
 @app.route("/generuj-oferte", methods=["GET"])
 def generuj_oferte_get():
-    tla_wszystkie = {**tla_opcje_pion, **tla_opcje_poziom}
     return render_template(
         "generuj_oferte.html",
         szablony=szablony_opcje,
@@ -129,11 +131,17 @@ def api_generuj():
     szablon_key = data.get("szablon", list(szablony_opcje.keys())[0])
     plik_szablonu = szablony_opcje.get(szablon_key, "szablon5.html")
     jezyk = data.get("jezyk", "polski")
-    sortuj_po_nazwie = data.get("sortuj") == "alfa"
+    sortuj = data.get("sortuj", "dokument")
+    sortuj_po_nazwie = sortuj == "alfa"
 
     tlo_key = data.get("tlo", "").strip()
     plik_tla = tla_opcje_pion.get(tlo_key) or tla_opcje_poziom.get(tlo_key) or None
     rozszerz_ramki = bool(data.get("rozszerz_ramki", False))
+
+    meta = {
+        "szablon_nazwa": szablon_key,
+        "tlo_nazwa": tlo_key,
+    }
 
     task_id = str(uuid.uuid4())
     tasks[task_id] = {"status": "running", "pdf_path": None, "error": None}
@@ -151,8 +159,8 @@ def api_generuj():
                 sortuj_po_nazwie=sortuj_po_nazwie,
                 open_after=False,
                 rozszerz_ramki=rozszerz_ramki,
+                meta=meta,
             )
-            # Absolutna ścieżka — przed przywróceniem katalogu!
             tasks[task_id]["pdf_path"] = str(Path(pdf_path).resolve())
             tasks[task_id]["status"] = "done"
         except Exception as e:
@@ -178,9 +186,96 @@ def api_pobierz(task_id):
     task = tasks.get(task_id)
     if not task or task["status"] != "done":
         return jsonify({"error": "PDF niedostępny"}), 404
-    pdf_path = task["pdf_path"]
-    return send_file(pdf_path, mimetype="application/pdf", as_attachment=False)
+    return send_file(task["pdf_path"], mimetype="application/pdf", as_attachment=False)
 
+
+# ================================================================
+#  MOJE OFERTY
+# ================================================================
+
+def _scan_oferty() -> list[dict]:
+    """Skanuje OFERTY_ROOT i zwraca listę ofert z metadanymi (JSON lub parsowanie nazwy)."""
+    oferty = []
+    if not OFERTY_ROOT.exists():
+        return oferty
+    for pdf in OFERTY_ROOT.rglob("*.pdf"):
+        host = pdf.parent.name
+        sidecar = pdf.with_suffix(".json")
+        if sidecar.exists():
+            try:
+                m = json.loads(sidecar.read_text(encoding="utf-8"))
+            except Exception:
+                m = {}
+        else:
+            m = _parse_filename(pdf.stem)
+        m["_filename"] = pdf.name
+        m["_host"] = host
+        m["_size_kb"] = round(pdf.stat().st_size / 1024)
+        # timestamp do sortowania
+        ts = m.get("wygenerowano", "")
+        if not ts:
+            ts = m.get("_ts", "")
+        m["_ts_sort"] = ts
+        oferty.append(m)
+    oferty.sort(key=lambda x: x["_ts_sort"], reverse=True)
+    return oferty
+
+
+def _parse_filename(stem: str) -> dict:
+    """Parsuje nazwę pliku PDF gdy brak sidecara.
+    Format: {safe_num}_{jezyk}_{safe_tpl}_{YYYYMMDD}_{HHMM}
+    Przykład: PRO 1_TM_2025_polski_szablon5_20260314_1741
+    """
+    from datetime import datetime as _dt
+    parts = stem.rsplit("_", 4)  # max 4 cięcia od prawej → 5 części
+    ts = ""
+    jezyk = ""
+    szablon = ""
+    numer = stem
+    if len(parts) == 5:
+        numer_raw, jezyk, szablon, date_part, time_part = parts
+        numer = numer_raw.replace("_", "/")
+        try:
+            ts = _dt.strptime(date_part + time_part, "%Y%m%d%H%M").isoformat(timespec="seconds")
+        except Exception:
+            pass
+    return {
+        "numer": numer,
+        "szablon_nazwa": szablon,
+        "jezyk": jezyk,
+        "tlo_nazwa": "",
+        "ilosc_produktow": None,
+        "wygenerowano": ts,
+        "_ts": ts,
+    }
+
+
+@app.route("/moje-oferty")
+def moje_oferty():
+    host = platform.node()
+    oferty = _scan_oferty()
+    return render_template("moje_oferty.html", oferty=oferty, host=host)
+
+
+@app.route("/api/oferty")
+def api_oferty():
+    return jsonify(_scan_oferty())
+
+
+@app.route("/oferty/pdf/<host>/<filename>")
+def oferty_pdf(host, filename):
+    # Zapobiega path traversal
+    if ".." in host or ".." in filename:
+        abort(400)
+    pdf_path = OFERTY_ROOT / host / filename
+    if not pdf_path.is_file():
+        abort(404)
+    return send_file(str(pdf_path), mimetype="application/pdf", as_attachment=False)
+
+
+# ================================================================
+#  PLACEHOLDERY
+# ================================================================
 
 @app.route("/mailing")
 def mailing():

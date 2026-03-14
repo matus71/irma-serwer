@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Moje oferty — Panel IRMA{% endblock %}
+
+{% block content %}
+<style>
+    h2 { font-size: 1.5rem; color: #e94560; margin-bottom: 8px; }
+    .subtitle { color: #606080; font-size: 0.85rem; margin-bottom: 28px; }
+
+    .oferty-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+
+    .oferty-table th {
+        text-align: left;
+        padding: 10px 14px;
+        color: #a0a0c0;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #0f3460;
+        white-space: nowrap;
+    }
+
+    .oferty-table td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #0f3460;
+        vertical-align: middle;
+    }
+
+    .oferty-table tr:hover td { background: #16213e; }
+
+    .numer { font-weight: bold; color: #e0e0e0; }
+    .szablon { color: #b0b0d0; }
+    .meta-pill {
+        display: inline-block;
+        background: #0f3460;
+        border-radius: 12px;
+        padding: 2px 10px;
+        font-size: 0.78rem;
+        color: #8080b0;
+        margin: 1px 2px;
+        white-space: nowrap;
+    }
+    .meta-pill.green { background: #0d3320; color: #4cdf80; }
+    .meta-pill.red   { background: #3a0d15; color: #ff8888; }
+
+    .ts { color: #606080; font-size: 0.82rem; white-space: nowrap; }
+    .size { color: #505070; font-size: 0.8rem; }
+
+    .btn-view {
+        background: #0f3460;
+        color: #e94560;
+        border: 1px solid #e94560;
+        border-radius: 6px;
+        padding: 6px 14px;
+        font-size: 0.82rem;
+        cursor: pointer;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background 0.2s;
+    }
+    .btn-view:hover { background: #e94560; color: white; }
+
+    .btn-mail {
+        background: #0f3460;
+        color: #4cdf80;
+        border: 1px solid #1a6b2e;
+        border-radius: 6px;
+        padding: 6px 14px;
+        font-size: 0.82rem;
+        cursor: pointer;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background 0.2s;
+        margin-left: 6px;
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .actions { white-space: nowrap; }
+
+    .empty {
+        color: #505070;
+        text-align: center;
+        padding: 60px 0;
+        font-size: 1rem;
+    }
+
+    .host-badge {
+        background: #16213e;
+        border: 1px solid #0f3460;
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 0.75rem;
+        color: #505070;
+        margin-left: 8px;
+    }
+</style>
+
+<h2>Moje oferty</h2>
+<p class="subtitle">Wygenerowane pliki PDF — posortowane od najnowszego</p>
+
+{% if oferty %}
+<table class="oferty-table">
+    <thead>
+        <tr>
+            <th>Data</th>
+            <th>Numer oferty</th>
+            <th>Szczegóły</th>
+            <th>Rozmiar</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for o in oferty %}
+    <tr>
+        <td class="ts">
+            {% if o.wygenerowano %}
+                {{ o.wygenerowano[:10] }}<br>
+                <span style="color:#404060">{{ o.wygenerowano[11:16] }}</span>
+            {% else %}—{% endif %}
+            {% if o._host != host %}<span class="host-badge">{{ o._host }}</span>{% endif %}
+        </td>
+        <td class="numer">{{ o.numer or o._filename }}</td>
+        <td>
+            {% if o.szablon_nazwa %}
+            <span class="meta-pill">{{ o.szablon_nazwa }}</span>
+            {% endif %}
+            {% if o.jezyk and o.jezyk != 'polski' %}
+            <span class="meta-pill">{{ o.jezyk }}</span>
+            {% endif %}
+            {% if o.tlo_nazwa %}
+            <span class="meta-pill">tło: {{ o.tlo_nazwa }}</span>
+            {% endif %}
+            {% if o.ilosc_produktow %}
+            <span class="meta-pill green">{{ o.ilosc_produktow }} prod.</span>
+            {% endif %}
+            {% if o.rozszerz_ramki %}
+            <span class="meta-pill red">+ramki</span>
+            {% endif %}
+        </td>
+        <td class="size">{{ o._size_kb }} KB</td>
+        <td class="actions">
+            <a class="btn-view"
+               href="/oferty/pdf/{{ o._host }}/{{ o._filename }}"
+               target="_blank">Otwórz PDF</a>
+            <span class="btn-mail" title="Funkcja mailingowa — wkrótce">Wyślij</span>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty">Brak wygenerowanych ofert. <a href="/generuj-oferte" style="color:#e94560">Wygeneruj pierwszą →</a></p>
+{% endif %}
+{% endblock %}
