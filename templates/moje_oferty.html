@@ -151,6 +151,7 @@
                 {{ o.wygenerowano[:10] }}<br>
                 <span style="color:#404060">{{ o.wygenerowano[11:16] }}</span>
             {% else %}—{% endif %}
+            <br><span style="color:#303050;font-size:0.75rem">{{ o._host }}</span>
         </td>
         <td class="numer">{{ o.numer or o._filename }}</td>
         <td style="color:#a0a0c0;font-size:0.85rem;max-width:220px">{{ o.opis or '' }}</td>
