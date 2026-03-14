@@ -138,9 +138,11 @@ def api_generuj():
     plik_tla = tla_opcje_pion.get(tlo_key) or tla_opcje_poziom.get(tlo_key) or None
     rozszerz_ramki = bool(data.get("rozszerz_ramki", False))
 
+    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "")
     meta = {
         "szablon_nazwa": szablon_key,
         "tlo_nazwa": tlo_key,
+        "ip": client_ip.split(",")[0].strip(),
     }
 
     task_id = str(uuid.uuid4())
