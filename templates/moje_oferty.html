@@ -3,6 +3,9 @@
 
 {% block content %}
 <style>
+    /* Rozszerz kontener na całą szerokość dla tej strony */
+    main { max-width: 98% !important; }
+
     h2 { font-size: 1.5rem; color: #e94560; margin-bottom: 8px; }
     .subtitle { color: #606080; font-size: 0.85rem; margin-bottom: 16px; }
 
@@ -54,16 +57,16 @@
     .oferty-table tr.ukryta { display: none; }
 
     /* Kolumna: data — wąska */
-    .col-data { white-space: nowrap; width: 90px; }
+    .col-data { white-space: nowrap; width: 88px; }
     .ts-date { color: #a0a0c0; }
     .ts-time { color: #404060; font-size: 0.8rem; }
 
     /* Kolumna: numer — kompaktowa */
-    .col-numer { white-space: nowrap; width: 130px; }
+    .col-numer { white-space: nowrap; width: 120px; }
     .numer { font-weight: bold; color: #e0e0e0; font-size: 0.88rem; }
 
     /* Kolumna: opis — szeroka, zawijana */
-    .col-opis { width: 55%; }
+    .col-opis { }  /* auto — bierze resztę */
     .opis-text {
         color: #9090b0;
         font-size: 0.82rem;
@@ -72,7 +75,7 @@
     }
 
     /* Kolumna: szczegóły */
-    .col-szczegs { width: 20%; }
+    .col-szczegs { width: 22%; white-space: nowrap; }
     .pill {
         display: inline-block;
         background: #0f3460;
