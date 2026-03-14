@@ -40,24 +40,24 @@ tasks: dict[str, dict] = {}
 # ================================================================
 
 szablony_opcje = {
-    "2x3 poziomo 6prod/str": "szablon5.html",
-    "KP Karta produktu 2x3 poziomo 6prod/str": "szablon805.html",
-    "KP Karta produktu 4pr/str, Opis AI skrócony": "szablon970.html",
-    "KP Karta produktu 1pr/str 4 zdjęcia, opis pełny(AI skraca)": "szablon911.html",
-    "KP Karta produktu 10pr/str, lista kompaktowa 1zdjęcie": "szablon930.html",
-    "KP Karta produktu 12pr/str, lista kompaktowa 4zdjęcia": "szablon931.html",
-    "5x4 gazetka+tło 20prod/str": "szablon940.html",
-    "4x3 gazetka 12prod/str": "szablon4.html",
-    "4x3 gazetka 12prod/str AI (opis uzupełniony do 250zn)": "szablon401.html",
-    "1 produkt na stronę (pełny opis)": "szablon1.html",
-    "1 produkt na stronę duże zdjęcie i 3małe+ (pełny opis)": "szablon11.html",
-    "3 produkty na stronę (bez opisu)": "szablon2.html",
-    "5 produktów na stronę 1 zdjęcie, opis krótki": "szablon6.html",
-    "5 produktów na stronę 1 zdjęcie, opis długi AI 600znaków": "szablon7.html",
-    "16 pr/str 1/zdj lista kompaktowa": "szablon3.html",
-    "14 pr/str 4/zdj lista kompaktowa": "szablon32.html",
-    "PROMO 10prod 1foto cena przed i po rabacie": "szablon350.html",
-    "PROMO 10prod 1foto cena przed i po rabacie+wartość oferty": "szablon351.html",
+    "2×3 poziomo — 6 produktów/str":                              "szablon5.html",
+    "KP — 2×3, 6 produktów/str":                                  "szablon805.html",
+    "KP — 4 produkty/str, opis AI skrócony":                      "szablon970.html",
+    "KP — 1 produkt/str, 4 zdjęcia, opis pełny (AI skraca)":     "szablon911.html",
+    "KP — 10 produktów/str, lista kompaktowa, 1 zdjęcie":         "szablon930.html",
+    "KP — 12 produktów/str, lista kompaktowa, 4 zdjęcia":         "szablon931.html",
+    "5×4 gazetka z tłem — 20 produktów/str":                      "szablon940.html",
+    "4×3 gazetka — 12 produktów/str":                             "szablon4.html",
+    "4×3 gazetka — 12 produktów/str, opis AI do 250 zn":          "szablon401.html",
+    "1 produkt/str — pełny opis":                                  "szablon1.html",
+    "1 produkt/str — duże zdjęcie + 3 małe, pełny opis":         "szablon11.html",
+    "3 produkty/str — bez opisu":                                  "szablon2.html",
+    "5 produktów/str — 1 zdjęcie, opis krótki":                   "szablon6.html",
+    "5 produktów/str — 1 zdjęcie, opis długi AI 600 znaków":      "szablon7.html",
+    "16 produktów/str — lista kompaktowa, 1 zdjęcie":             "szablon3.html",
+    "14 produktów/str — lista kompaktowa, 4 zdjęcia":             "szablon32.html",
+    "PROMO — 10 produktów, cena przed i po rabacie":              "szablon350.html",
+    "PROMO — 10 produktów, cena przed/po + wartość oferty":       "szablon351.html",
 }
 
 tla_opcje_pion = {
@@ -190,48 +190,45 @@ def api_pobierz(task_id):
 
 
 # ================================================================
-#  MOJE OFERTY
+#  MOJE OFERTY — helpers
 # ================================================================
 
-def _scan_oferty() -> list[dict]:
-    """Skanuje OFERTY_ROOT i zwraca listę ofert z metadanymi (JSON lub parsowanie nazwy)."""
-    oferty = []
-    if not OFERTY_ROOT.exists():
-        return oferty
-    for pdf in OFERTY_ROOT.rglob("*.pdf"):
-        host = pdf.parent.name
-        sidecar = pdf.with_suffix(".json")
-        if sidecar.exists():
-            try:
-                m = json.loads(sidecar.read_text(encoding="utf-8"))
-            except Exception:
-                m = {}
-        else:
-            m = _parse_filename(pdf.stem)
-        m["_filename"] = pdf.name
-        m["_host"] = host
-        m["_size_kb"] = round(pdf.stat().st_size / 1024)
-        # timestamp do sortowania
-        ts = m.get("wygenerowano", "")
-        if not ts:
-            ts = m.get("_ts", "")
-        m["_ts_sort"] = ts
-        oferty.append(m)
-    oferty.sort(key=lambda x: x["_ts_sort"], reverse=True)
-    return oferty
+def _meta_from_pdf(pdf_path: Path) -> dict:
+    """Odczytuje metadane z Info dictionary pliku PDF (pypdf)."""
+    try:
+        from pypdf import PdfReader
+        info = PdfReader(str(pdf_path)).metadata or {}
+        kw = str(info.get("/Keywords", ""))
+        parsed = {}
+        for part in kw.split(";"):
+            part = part.strip()
+            if "=" in part:
+                k, v = part.split("=", 1)
+                parsed[k.strip()] = v.strip()
+        return {
+            "numer":           str(info.get("/Title", "")),
+            "opis":            str(info.get("/Description", "")),
+            "szablon_nazwa":   str(info.get("/Subject", "")),
+            "jezyk":           parsed.get("jezyk", ""),
+            "tlo_nazwa":       parsed.get("tlo", ""),
+            "ilosc_produktow": int(parsed["ilosc"]) if parsed.get("ilosc", "").isdigit() else None,
+            "sortuj":          parsed.get("sortuj", ""),
+            "rozszerz_ramki":  parsed.get("rozszerz_ramki", "False") == "True",
+            "szablon_plik":    parsed.get("szablon_plik", ""),
+            "wygenerowano":    parsed.get("wygenerowano", ""),
+            "host":            str(info.get("/Author", "")),
+        }
+    except Exception:
+        return {}
 
 
 def _parse_filename(stem: str) -> dict:
-    """Parsuje nazwę pliku PDF gdy brak sidecara.
+    """Fallback — parsuje nazwę pliku gdy brak sidecara i metadanych PDF.
     Format: {safe_num}_{jezyk}_{safe_tpl}_{YYYYMMDD}_{HHMM}
-    Przykład: PRO 1_TM_2025_polski_szablon5_20260314_1741
     """
     from datetime import datetime as _dt
-    parts = stem.rsplit("_", 4)  # max 4 cięcia od prawej → 5 części
-    ts = ""
-    jezyk = ""
-    szablon = ""
-    numer = stem
+    parts = stem.rsplit("_", 4)
+    ts, jezyk, szablon, numer = "", "", "", stem
     if len(parts) == 5:
         numer_raw, jezyk, szablon, date_part, time_part = parts
         numer = numer_raw.replace("_", "/")
@@ -240,15 +237,38 @@ def _parse_filename(stem: str) -> dict:
         except Exception:
             pass
     return {
-        "numer": numer,
-        "szablon_nazwa": szablon,
-        "jezyk": jezyk,
-        "tlo_nazwa": "",
-        "ilosc_produktow": None,
-        "wygenerowano": ts,
-        "_ts": ts,
+        "numer": numer, "szablon_nazwa": szablon, "jezyk": jezyk,
+        "tlo_nazwa": "", "ilosc_produktow": None, "wygenerowano": ts,
     }
 
+
+def _scan_oferty() -> list[dict]:
+    """Skanuje OFERTY_ROOT. Źródła metadanych: JSON sidecar → PDF metadata → nazwa pliku."""
+    oferty = []
+    if not OFERTY_ROOT.exists():
+        return oferty
+    for pdf in sorted(OFERTY_ROOT.rglob("*.pdf")):
+        host_dir = pdf.parent.name
+        sidecar = pdf.with_suffix(".json")
+        if sidecar.exists():
+            try:
+                m = json.loads(sidecar.read_text(encoding="utf-8"))
+            except Exception:
+                m = _meta_from_pdf(pdf) or _parse_filename(pdf.stem)
+        else:
+            m = _meta_from_pdf(pdf) or _parse_filename(pdf.stem)
+        m["_filename"] = pdf.name
+        m["_host"] = host_dir
+        m["_size_kb"] = round(pdf.stat().st_size / 1024)
+        m["_ts_sort"] = m.get("wygenerowano") or ""
+        oferty.append(m)
+    oferty.sort(key=lambda x: x["_ts_sort"], reverse=True)
+    return oferty
+
+
+# ================================================================
+#  MOJE OFERTY — routes
+# ================================================================
 
 @app.route("/moje-oferty")
 def moje_oferty():
@@ -264,13 +284,58 @@ def api_oferty():
 
 @app.route("/oferty/pdf/<host>/<filename>")
 def oferty_pdf(host, filename):
-    # Zapobiega path traversal
     if ".." in host or ".." in filename:
         abort(400)
     pdf_path = OFERTY_ROOT / host / filename
     if not pdf_path.is_file():
         abort(404)
     return send_file(str(pdf_path), mimetype="application/pdf", as_attachment=False)
+
+
+@app.route("/api/oferty/usun", methods=["DELETE"])
+def api_oferty_usun():
+    data = request.json or {}
+    host = data.get("host", "")
+    filename = data.get("filename", "")
+    if ".." in host or ".." in filename or not filename.endswith(".pdf"):
+        return jsonify({"error": "Nieprawidłowe parametry"}), 400
+    pdf_path = OFERTY_ROOT / host / filename
+    if not pdf_path.is_file():
+        return jsonify({"error": "Plik nie istnieje"}), 404
+    pdf_path.unlink()
+    sidecar = pdf_path.with_suffix(".json")
+    if sidecar.exists():
+        sidecar.unlink()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/oferty/zmien-nazwe", methods=["POST"])
+def api_oferty_zmien_nazwe():
+    data = request.json or {}
+    host = data.get("host", "")
+    filename = data.get("filename", "")
+    nowa_nazwa = (data.get("nowa_nazwa") or "").strip()
+    if ".." in host or ".." in filename or not filename.endswith(".pdf"):
+        return jsonify({"error": "Nieprawidłowe parametry"}), 400
+    if not nowa_nazwa:
+        return jsonify({"error": "Brak nowej nazwy"}), 400
+    # Normalizacja: usuń znaki niedozwolone w nazwie pliku
+    import re as _re
+    safe = _re.sub(r'[\\/:*?"<>|]', "_", nowa_nazwa)
+    if not safe.endswith(".pdf"):
+        safe += ".pdf"
+    pdf_path = OFERTY_ROOT / host / filename
+    new_path  = OFERTY_ROOT / host / safe
+    if not pdf_path.is_file():
+        return jsonify({"error": "Plik nie istnieje"}), 404
+    if new_path.exists():
+        return jsonify({"error": "Plik o tej nazwie już istnieje"}), 409
+    pdf_path.rename(new_path)
+    # Przenieś sidecar
+    old_sc = pdf_path.with_suffix(".json")
+    if old_sc.exists():
+        old_sc.rename(new_path.with_suffix(".json"))
+    return jsonify({"ok": True, "nowa_nazwa": safe})
 
 
 # ================================================================

@@ -24,16 +24,17 @@
     }
 
     .oferty-table td {
-        padding: 12px 14px;
+        padding: 11px 14px;
         border-bottom: 1px solid #0f3460;
         vertical-align: middle;
     }
 
     .oferty-table tr:hover td { background: #16213e; }
+    .oferty-table tr.usuwana td { opacity: 0.3; transition: opacity 0.3s; }
 
     .numer { font-weight: bold; color: #e0e0e0; }
-    .szablon { color: #b0b0d0; }
-    .meta-pill {
+
+    .pill {
         display: inline-block;
         background: #0f3460;
         border-radius: 12px;
@@ -43,41 +44,31 @@
         margin: 1px 2px;
         white-space: nowrap;
     }
-    .meta-pill.green { background: #0d3320; color: #4cdf80; }
-    .meta-pill.red   { background: #3a0d15; color: #ff8888; }
+    .pill.green  { background: #0d3320; color: #4cdf80; }
+    .pill.orange { background: #2a1f00; color: #e0a030; }
+    .pill.red    { background: #3a0d15; color: #ff8888; }
 
     .ts { color: #606080; font-size: 0.82rem; white-space: nowrap; }
     .size { color: #505070; font-size: 0.8rem; }
 
-    .btn-view {
-        background: #0f3460;
-        color: #e94560;
-        border: 1px solid #e94560;
+    .btn {
         border-radius: 6px;
-        padding: 6px 14px;
+        padding: 5px 13px;
         font-size: 0.82rem;
         cursor: pointer;
         text-decoration: none;
         white-space: nowrap;
-        transition: background 0.2s;
+        transition: background 0.2s, color 0.2s;
+        border: 1px solid;
+        background: transparent;
     }
+    .btn-view  { color: #e94560; border-color: #e94560; }
     .btn-view:hover { background: #e94560; color: white; }
-
-    .btn-mail {
-        background: #0f3460;
-        color: #4cdf80;
-        border: 1px solid #1a6b2e;
-        border-radius: 6px;
-        padding: 6px 14px;
-        font-size: 0.82rem;
-        cursor: pointer;
-        text-decoration: none;
-        white-space: nowrap;
-        transition: background 0.2s;
-        margin-left: 6px;
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
+    .btn-rename { color: #6090e0; border-color: #2a4070; margin-left: 4px; }
+    .btn-rename:hover { background: #2a4070; color: #a0c0ff; }
+    .btn-del   { color: #707090; border-color: #303050; margin-left: 4px; }
+    .btn-del:hover { background: #3a0d15; color: #ff6060; border-color: #7a1a2e; }
+    .btn-mail  { color: #4cdf80; border-color: #1a6b2e; margin-left: 4px; opacity: 0.4; cursor: not-allowed; }
 
     .actions { white-space: nowrap; }
 
@@ -85,29 +76,68 @@
         color: #505070;
         text-align: center;
         padding: 60px 0;
-        font-size: 1rem;
     }
 
-    .host-badge {
+    /* Modal zmień nazwę */
+    #modal-backdrop {
+        display: none;
+        position: fixed; inset: 0;
+        background: rgba(10,10,30,0.8);
+        z-index: 200;
+        align-items: center;
+        justify-content: center;
+    }
+    #modal-backdrop.active { display: flex; }
+    #modal-box {
         background: #16213e;
         border: 1px solid #0f3460;
-        border-radius: 4px;
-        padding: 2px 8px;
-        font-size: 0.75rem;
-        color: #505070;
-        margin-left: 8px;
+        border-radius: 12px;
+        padding: 28px 32px;
+        min-width: 380px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
     }
+    #modal-box h3 { color: #e94560; font-size: 1.1rem; }
+    #modal-input {
+        background: #0f3460;
+        border: 1px solid #1a4a7a;
+        border-radius: 6px;
+        color: #e0e0e0;
+        padding: 10px 14px;
+        font-size: 0.95rem;
+        outline: none;
+        width: 100%;
+    }
+    #modal-input:focus { border-color: #e94560; }
+    .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-modal-ok  { background: #e94560; color: white; border: none; border-radius: 6px; padding: 8px 22px; cursor: pointer; font-size: 0.9rem; }
+    .btn-modal-ok:hover { background: #c73652; }
+    .btn-modal-cancel { background: #0f3460; color: #a0a0c0; border: 1px solid #1a4a7a; border-radius: 6px; padding: 8px 22px; cursor: pointer; font-size: 0.9rem; }
+    #modal-error { color: #ff6b6b; font-size: 0.85rem; display: none; }
+
+    /* Toast */
+    #toast {
+        position: fixed; bottom: 30px; right: 30px;
+        background: #0d3320; border: 1px solid #1a6b2e;
+        color: #4cdf80; padding: 12px 22px;
+        border-radius: 8px; font-size: 0.9rem;
+        display: none; z-index: 300;
+        animation: fadeIn 0.2s;
+    }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
 </style>
 
 <h2>Moje oferty</h2>
-<p class="subtitle">Wygenerowane pliki PDF — posortowane od najnowszego</p>
+<p class="subtitle">Wygenerowane pliki PDF — od najnowszego</p>
 
 {% if oferty %}
-<table class="oferty-table">
+<table class="oferty-table" id="tabela">
     <thead>
         <tr>
             <th>Data</th>
             <th>Numer oferty</th>
+            <th>Opis (Uwagi)</th>
             <th>Szczegóły</th>
             <th>Rozmiar</th>
             <th></th>
@@ -115,44 +145,151 @@
     </thead>
     <tbody>
     {% for o in oferty %}
-    <tr>
+    <tr data-host="{{ o._host }}" data-filename="{{ o._filename }}">
         <td class="ts">
             {% if o.wygenerowano %}
                 {{ o.wygenerowano[:10] }}<br>
                 <span style="color:#404060">{{ o.wygenerowano[11:16] }}</span>
             {% else %}—{% endif %}
-            {% if o._host != host %}<span class="host-badge">{{ o._host }}</span>{% endif %}
         </td>
         <td class="numer">{{ o.numer or o._filename }}</td>
+        <td style="color:#a0a0c0;font-size:0.85rem;max-width:220px">{{ o.opis or '' }}</td>
         <td>
             {% if o.szablon_nazwa %}
-            <span class="meta-pill">{{ o.szablon_nazwa }}</span>
+            <span class="pill">{{ o.szablon_nazwa }}</span>
             {% endif %}
             {% if o.jezyk and o.jezyk != 'polski' %}
-            <span class="meta-pill">{{ o.jezyk }}</span>
+            <span class="pill orange">{{ o.jezyk }}</span>
             {% endif %}
             {% if o.tlo_nazwa %}
-            <span class="meta-pill">tło: {{ o.tlo_nazwa }}</span>
+            <span class="pill">tło: {{ o.tlo_nazwa }}</span>
             {% endif %}
             {% if o.ilosc_produktow %}
-            <span class="meta-pill green">{{ o.ilosc_produktow }} prod.</span>
+            <span class="pill green">{{ o.ilosc_produktow }} prod.</span>
             {% endif %}
             {% if o.rozszerz_ramki %}
-            <span class="meta-pill red">+ramki</span>
+            <span class="pill red">+ramki</span>
             {% endif %}
         </td>
         <td class="size">{{ o._size_kb }} KB</td>
         <td class="actions">
-            <a class="btn-view"
+            <a class="btn btn-view"
                href="/oferty/pdf/{{ o._host }}/{{ o._filename }}"
-               target="_blank">Otwórz PDF</a>
-            <span class="btn-mail" title="Funkcja mailingowa — wkrótce">Wyślij</span>
+               target="_blank">Otwórz</a>
+            <button class="btn btn-rename" onclick="otworzRename(this)">Zmień nazwę</button>
+            <button class="btn btn-del" onclick="usunOferte(this)">Usuń</button>
+            <button class="btn btn-mail" title="Mailing — wkrótce" disabled>Wyślij</button>
         </td>
     </tr>
     {% endfor %}
     </tbody>
 </table>
 {% else %}
-<p class="empty">Brak wygenerowanych ofert. <a href="/generuj-oferte" style="color:#e94560">Wygeneruj pierwszą →</a></p>
+<p class="empty">Brak wygenerowanych ofert.
+    <a href="/generuj-oferte" style="color:#e94560">Wygeneruj pierwszą →</a>
+</p>
 {% endif %}
+
+<!-- Modal zmień nazwę -->
+<div id="modal-backdrop">
+    <div id="modal-box">
+        <h3>Zmień nazwę pliku</h3>
+        <input id="modal-input" type="text" placeholder="nowa_nazwa.pdf" />
+        <div id="modal-error"></div>
+        <div class="modal-btns">
+            <button class="btn-modal-cancel" onclick="zamknijModal()">Anuluj</button>
+            <button class="btn-modal-ok" onclick="zapiszNazwe()">Zapisz</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let _renameRow = null;
+
+function rowData(btn) {
+    const tr = btn.closest('tr');
+    return { tr, host: tr.dataset.host, filename: tr.dataset.filename };
+}
+
+function toast(msg, ok = true) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.style.cssText = ok
+        ? 'display:block;background:#0d3320;border-color:#1a6b2e;color:#4cdf80'
+        : 'display:block;background:#3a0d15;border-color:#7a1a2e;color:#ff6b6b';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.style.display = 'none', 3000);
+}
+
+async function usunOferte(btn) {
+    const { tr, host, filename } = rowData(btn);
+    if (!confirm(`Usunąć plik:\n${filename}?`)) return;
+    tr.classList.add('usuwana');
+    const r = await fetch('/api/oferty/usun', {
+        method: 'DELETE',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ host, filename })
+    });
+    if (r.ok) {
+        tr.remove();
+        toast('Plik usunięty.');
+    } else {
+        tr.classList.remove('usuwana');
+        const d = await r.json();
+        toast(d.error || 'Błąd usuwania.', false);
+    }
+}
+
+function otworzRename(btn) {
+    const { tr, filename } = rowData(btn);
+    _renameRow = tr;
+    const inp = document.getElementById('modal-input');
+    inp.value = filename;
+    document.getElementById('modal-error').style.display = 'none';
+    document.getElementById('modal-backdrop').classList.add('active');
+    setTimeout(() => { inp.focus(); inp.select(); }, 50);
+}
+
+function zamknijModal() {
+    document.getElementById('modal-backdrop').classList.remove('active');
+    _renameRow = null;
+}
+
+async function zapiszNazwe() {
+    if (!_renameRow) return;
+    const nowa_nazwa = document.getElementById('modal-input').value.trim();
+    const errEl = document.getElementById('modal-error');
+    if (!nowa_nazwa) { errEl.textContent = 'Podaj nazwę.'; errEl.style.display='block'; return; }
+    const host = _renameRow.dataset.host;
+    const filename = _renameRow.dataset.filename;
+    const r = await fetch('/api/oferty/zmien-nazwe', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ host, filename, nowa_nazwa })
+    });
+    const d = await r.json();
+    if (r.ok) {
+        // Aktualizuj wiersz
+        _renameRow.dataset.filename = d.nowa_nazwa;
+        const a = _renameRow.querySelector('.btn-view');
+        a.href = `/oferty/pdf/${host}/${d.nowa_nazwa}`;
+        zamknijModal();
+        toast('Nazwa zmieniona.');
+    } else {
+        errEl.textContent = d.error || 'Błąd.';
+        errEl.style.display = 'block';
+    }
+}
+
+// Zamknij modal klikając poza nim
+document.getElementById('modal-backdrop').addEventListener('click', function(e) {
+    if (e.target === this) zamknijModal();
+});
+document.getElementById('modal-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') zapiszNazwe();
+    if (e.key === 'Escape') zamknijModal();
+});
+</script>
 {% endblock %}
