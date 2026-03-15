@@ -130,9 +130,106 @@
         font-weight: bold;
         text-decoration: underline;
     }
+
+    /* Przycisk info */
+    .btn-info {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px; height: 22px;
+        border-radius: 50%;
+        background: #0f3460;
+        border: 1px solid #1a4a7a;
+        color: #6080b0;
+        font-size: 0.8rem;
+        font-weight: bold;
+        cursor: pointer;
+        vertical-align: middle;
+        margin-left: 8px;
+        transition: background 0.2s, color 0.2s;
+    }
+    .btn-info:hover { background: #1a4a7a; color: #e0e0e0; }
+
+    /* Popup legenda */
+    #legenda-popup {
+        display: none;
+        position: fixed;
+        z-index: 500;
+        background: #16213e;
+        border: 1px solid #0f3460;
+        border-radius: 10px;
+        padding: 18px 22px 14px;
+        min-width: 340px;
+        max-width: 440px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        font-size: 0.88rem;
+        line-height: 1.6;
+    }
+    #legenda-popup.visible { display: block; }
+    #legenda-popup h4 { color: #e94560; margin-bottom: 6px; font-size: 0.95rem; }
+    .legenda-sub { color: #606080; font-size: 0.78rem; margin-bottom: 12px; }
+    .legend-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 7px;
+    }
+    .legend-pill {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 4px;
+        font-size: 0.78rem;
+        font-weight: bold;
+        white-space: nowrap;
+        min-width: 80px;
+        text-align: center;
+    }
+    .lp-green      { background: #0d3320; color: #4cdf80; border: 1px solid #1a6b2e; }
+    .lp-red-bg     { background: #3a0d15; color: #ffffff; border: 1px solid #7a1a2e; }
+    .lp-orange     { background: transparent; color: #e0a030; border: 1px solid #5a4010; }
+    .lp-red-text   { background: transparent; color: #ff4444; border: 1px solid #7a1a2e; font-weight: 900; }
+    .legend-desc   { color: #a0a0c0; font-size: 0.82rem; }
+    .legend-phrase { color: #e0e0ff; font-family: monospace; font-size: 0.8rem; background: #0f3460; padding: 1px 5px; border-radius: 3px; }
+    #legenda-close {
+        float: right;
+        background: none; border: none;
+        color: #606080; font-size: 1.1rem; cursor: pointer;
+        margin: -4px -6px 0 0;
+        line-height: 1;
+    }
+    #legenda-close:hover { color: #e0e0e0; }
 </style>
 
-<h2>Generuj ofertę PDF</h2>
+<h2>Generuj ofertę PDF
+    <button type="button" class="btn-info" id="btn-info" title="Informacje o etykietach produktów">ℹ</button>
+</h2>
+
+<!-- Popup: legenda etykiet -->
+<div id="legenda-popup">
+    <button id="legenda-close" onclick="zamknijLegendę()">✕</button>
+    <h4>Etykiety produktów — legenda</h4>
+    <p class="legenda-sub">Etykiety pojawiają się automatycznie na podstawie pola <strong>Opis pozycji</strong> dokumentu handlowego (<em>ob_Opis</em>). Wystarczy, że opis zawiera jedną z poniższych fraz (wielkość liter nie ma znaczenia):</p>
+    <div class="legend-row">
+        <span class="legend-pill lp-green">Nowość</span>
+        <span class="legend-desc">fraza <span class="legend-phrase">nowość</span> lub <span class="legend-phrase">new</span></span>
+    </div>
+    <div class="legend-row">
+        <span class="legend-pill lp-red-bg">Promo</span>
+        <span class="legend-desc">fraza <span class="legend-phrase">promo</span></span>
+    </div>
+    <div class="legend-row">
+        <span class="legend-pill lp-orange">Aktualność</span>
+        <span class="legend-desc">fraza <span class="legend-phrase">aktual</span></span>
+    </div>
+    <div class="legend-row">
+        <span class="legend-pill lp-red-text">Wyprzedaż</span>
+        <span class="legend-desc">fraza <span class="legend-phrase">wyprz</span></span>
+    </div>
+    <div class="legend-row">
+        <span class="legend-pill lp-green">Obniżka</span>
+        <span class="legend-desc">fraza <span class="legend-phrase">obniż</span></span>
+    </div>
+</div>
 
 <form id="form-oferta">
     <div class="form-grid">
@@ -227,6 +324,34 @@ function onSzablonChange() {
         tloSel.disabled = true;
     }
 }
+
+// ── Legenda etykiet ──────────────────────────────────────────
+const btnInfo = document.getElementById('btn-info');
+const popup   = document.getElementById('legenda-popup');
+
+btnInfo.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (popup.classList.contains('visible')) {
+        zamknijLegendę();
+    } else {
+        const r = btnInfo.getBoundingClientRect();
+        popup.style.top  = (r.bottom + 8) + 'px';
+        popup.style.left = Math.min(r.left, window.innerWidth - 460) + 'px';
+        popup.classList.add('visible');
+    }
+});
+
+function zamknijLegendę() {
+    popup.classList.remove('visible');
+}
+
+document.addEventListener('click', (e) => {
+    if (!popup.contains(e.target) && e.target !== btnInfo) zamknijLegendę();
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') zamknijLegendę();
+});
 
 // Inicjalizacja przy ładowaniu — wypełnij tło i ustaw domyślne PRO Technik poziomo
 onSzablonChange();
